@@ -1,14 +1,15 @@
-# Welcome to your Lovable project
+# Welcome to my audio summurizer project
 
-## Project info
 
-**URL**: https://lovable.dev/projects/caf9ef63-db12-4315-82ff-edfd4d5c8c0f
+## Project link
+
+https://echo-shrink.lovable.app
 
 ## How can I edit this code?
 
 There are several ways of editing your application.
 
-**Use Lovable**
+**What I Use**
 
 Simply visit the [Lovable Project](https://lovable.dev/projects/caf9ef63-db12-4315-82ff-edfd4d5c8c0f) and start prompting.
 
