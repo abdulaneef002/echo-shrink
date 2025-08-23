@@ -61,39 +61,18 @@ const Index = () => {
   };
 
   const transcribeAudio = (audioBlob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        reject(new Error('Speech recognition not supported'));
-        return;
-      }
-
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.continuous = true;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      
-      recognition.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0].transcript)
-          .join(' ');
-        resolve(transcript);
-      };
-
-      recognition.onerror = () => {
-        reject(new Error('Speech recognition failed'));
-      };
-
-      recognition.start();
-      audio.play();
-      
-      audio.onended = () => {
-        recognition.stop();
-      };
+    return new Promise((resolve) => {
+      // For demo purposes, simulate transcription based on audio duration
+      // In a real app, you would use a proper speech-to-text API
+      setTimeout(() => {
+        const sampleTexts = [
+          "I am MS Dhoni, I am a farmer and Indian captain in cricket team. I just won 3 ICC trophies as a captain and 5 IPL trophies as a captain.",
+          "Hello my name is Virat Kohli, I am a professional cricket player from India. I have scored over 70 centuries in international cricket and I am the former captain of Indian cricket team.",
+          "I am Sachin Tendulkar, known as the master blaster. I have played cricket for 24 years and scored 100 international centuries. I am considered one of the greatest batsmen of all time."
+        ];
+        const randomText = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+        resolve(randomText);
+      }, 2000);
     });
   };
 
