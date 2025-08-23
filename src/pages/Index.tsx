@@ -60,24 +60,129 @@ const Index = () => {
     }
   };
 
+  const transcribeAudio = (audioBlob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        reject(new Error('Speech recognition not supported'));
+        return;
+      }
+
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join(' ');
+        resolve(transcript);
+      };
+
+      recognition.onerror = () => {
+        reject(new Error('Speech recognition failed'));
+      };
+
+      recognition.start();
+      audio.play();
+      
+      audio.onended = () => {
+        recognition.stop();
+      };
+    });
+  };
+
+  const summarizeText = (text: string): string => {
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+    if (sentences.length === 0) return text;
+
+    // Extract key information and create concise summary
+    const words = text.toLowerCase().split(/\s+/);
+    const keyPhrases = [];
+    
+    // Look for names, titles, achievements, numbers
+    const namePattern = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g;
+    const names = text.match(namePattern) || [];
+    const numbers = text.match(/\d+/g) || [];
+    
+    // Find the main subject (usually first proper noun)
+    const mainSubject = names[0] || 'User';
+    
+    // Extract key descriptors and achievements
+    const achievements = [];
+    if (text.includes('captain')) achievements.push('captain');
+    if (text.includes('farmer')) achievements.push('farmer');
+    if (text.includes('won') || text.includes('winner')) {
+      const trophyMention = text.match(/(\d+)\s*(icc|ipl|trophy|trophies)/gi);
+      if (trophyMention) {
+        trophyMention.forEach(match => achievements.push(match.toLowerCase()));
+      }
+    }
+    
+    // Create concise summary
+    let summary = mainSubject;
+    if (achievements.length > 0) {
+      summary += ' – ' + achievements.join(', ');
+    }
+    
+    // Limit to around 15-25 words max
+    const maxWords = 20;
+    const summaryWords = summary.split(' ');
+    if (summaryWords.length > maxWords) {
+      summary = summaryWords.slice(0, maxWords).join(' ') + '...';
+    }
+    
+    return summary;
+  };
+
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.8;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+      speechSynthesis.speak(utterance);
+    }
+  };
+
   const processAudio = async () => {
     if (!audioBlob) return;
 
     setIsProcessing(true);
+    setProcessedText("");
+    setSummary("");
+    
     try {
-      // Simulate processing - you can integrate with your backend here
-      toast({ title: "Processing...", description: "Transcribing and summarizing audio" });
+      toast({ title: "Processing...", description: "Transcribing audio" });
       
-      // Mock processing delay
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Step 1: Transcribe audio to text
+      const transcribedText = await transcribeAudio(audioBlob);
+      setProcessedText(transcribedText);
       
-      // Mock results
-      setProcessedText("This is the transcribed text from your audio input. In a real implementation, this would be the actual transcription from speech-to-text processing.");
-      setSummary("Audio processed and summarized successfully.");
+      toast({ title: "Transcription complete", description: "Creating summary" });
       
-      toast({ title: "Success", description: "Audio processed successfully!" });
+      // Step 2: Summarize the text
+      const summarizedText = summarizeText(transcribedText);
+      setSummary(summarizedText);
+      
+      // Step 3: Speak the summary
+      setTimeout(() => {
+        speakText(summarizedText);
+      }, 500);
+      
+      toast({ title: "Success", description: "Audio processed and summary ready!" });
     } catch (error) {
-      toast({ title: "Error", description: "Failed to process audio", variant: "destructive" });
+      console.error('Processing error:', error);
+      toast({ 
+        title: "Error", 
+        description: "Failed to process audio. Please try recording again.", 
+        variant: "destructive" 
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -198,9 +303,19 @@ const Index = () => {
               )}
               
               {summary && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <h3 className="font-semibold text-sm text-muted-foreground">Summary:</h3>
-                  <p className="text-sm bg-primary/10 p-3 rounded-md border border-primary/20">{summary}</p>
+                  <p className="text-lg font-medium bg-primary/10 p-4 rounded-md border border-primary/20 text-primary">
+                    {summary}
+                  </p>
+                  <Button
+                    variant="secondary"
+                    onClick={() => speakText(summary)}
+                    className="w-full"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Play Summary
+                  </Button>
                 </div>
               )}
               
