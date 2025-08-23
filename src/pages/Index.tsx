@@ -285,6 +285,13 @@ const Index = () => {
                     </Button>
                   </div>
                 )}
+
+                {processedText && (
+                  <div className="space-y-2 mt-4 pt-4 border-t border-border">
+                    <h3 className="font-semibold text-sm text-muted-foreground">Input Text Converted:</h3>
+                    <p className="text-sm bg-muted/50 p-3 rounded-md border">{processedText}</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
